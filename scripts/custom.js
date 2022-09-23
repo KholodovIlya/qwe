@@ -71,7 +71,7 @@ class StartButton extends MenuButton {
 }
 
 class MoneyText extends GameObject {
-  constructor() { super(540, 155, 980, 70); }
+  constructor() { super(540, 155, 980, 100); }
   setMoney(value) { money = value; this.render(); }
   render() {
     clearTransform(this.transform, 3);
@@ -150,7 +150,7 @@ class Platform extends GameObject {
 }
 
 class ScoreText extends GameObject {
-  constructor() { super(590, 50, 980, 70); this.score = 0; renderImage(images[4], new Vector4(50, 50, 100, 100), 3); }
+  constructor() { super(590, 50, 980, 100); this.score = 0; renderImage(images[4], new Vector4(50, 50, 100, 100), 3); }
 
   update() {
     if(isPaused) return;
