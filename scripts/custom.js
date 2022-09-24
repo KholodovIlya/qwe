@@ -16,7 +16,7 @@ function loadGame() {
 
 function loadMenu() {
   clearObjects(); objects.push(new StartButton());
-  objects[1].render(); renderImage(images[4], new Vector4(50, 50, 100, 100), 3); layers[0].context.fillText(highScore, 115, 82);
+  objects[1].render(); renderImage(images[5], new Vector4(50, 50, 100, 100), 3); layers[0].context.fillText(highScore, 115, 82);
 }
 
 function clearObjects() {
@@ -26,7 +26,10 @@ function clearObjects() {
 
 function pauseGame() { isPaused = true; objects.forEach(object => { if(object.onPause != null) object.onPause(); }); }
 
-function death() { pauseGame(); }
+function death() {
+  pauseGame(); objects.push(new EmptyButton()); objects.push(new RestartButton());
+  objects.push(new ShareButton()); objects.push(new HomeButton());
+}
 
 
 class Loader {
@@ -47,12 +50,21 @@ class Loader {
 
 // menu
 class MenuButton extends Button {
-  constructor(x, y) { super(x, y, 200, 200); this.render(); }
-
-  render() {
-    renderImage(images[0], this.transform, 3);
+  constructor(x, y, width, height, img) {
+    super(x, y, 0, 0); this.img = img; this.render();
+    this.start = true; this.finalSize = new Vector2(width, height);
   }
 
+  lateUpdate() {
+    super.lateUpdate();
+    if(!this.start) return;
+    if(this.transform.size.x < this.finalSize.x) this.transform.size.x += this.finalSize.x / 20;
+    if(this.transform.size.y < this.finalSize.y) this.transform.size.y += this.finalSize.x / 20;
+    this.start = this.transform.size.x < this.finalSize.x & this.transform.size.y < this.finalSize.y;
+    this.render();
+  }
+
+  render() { renderImage(this.img, this.transform, 3); }
   animate(value) {
     clearTransform(this.transform, 3);
     this.transform.size.x += value;
@@ -66,7 +78,7 @@ class MenuButton extends Button {
 }
 
 class StartButton extends MenuButton {
-  constructor() { super(540, 960); }
+  constructor() { super(540, 960, 500, 500, images[4]); }
   onRelease() { super.onRelease(); loadGame(); }
 }
 
@@ -79,11 +91,42 @@ class MoneyText extends GameObject {
     layers[3].context.fillText(money, 115, this.transform.position.y + 32);
   }
 }
+
+class EmptyButton extends MenuButton {
+  constructor() { super(540, 960 - 175, 550, 550, images[6]); }
+  onRelease() { super.onRelease(); window.open("https://www.youtube.com/channel/UCtfChJxP6PC6o7jI4G1Nwiw", '_blank'); }
+}
+
+class RestartButton extends MenuButton {
+  constructor() { super(540, 960 + 400, 300, 300, images[7]); }
+  onRelease() { super.onRelease(); loadGame(); }
+}
+
+class ShareButton extends MenuButton {
+  constructor() { super(540 + 300, 960 + 250, 250, 250, images[9]); }
+  onRelease() {
+    super.onRelease();
+    if (navigator.share) {
+      navigator.share({
+              title: "Bunny",
+              text: "Wd" + float2int(objects[6].score),
+              url: window.location.href
+          })
+          .then(function () {})
+          .catch(function () {})
+    }
+  }
+}
+
+class HomeButton extends MenuButton {
+  constructor() { super(540 - 300, 960 + 250, 250, 250, images[8]); }
+  onRelease() { super.onRelease(); loadMenu(); }
+}
 // menu
 
 // game
 class Background extends GameObject {
-  constructor(img) { super(540, 960, 1080, 1920); this.speed = 10; this.x = 1080; }
+  constructor() { super(540, 960, 1080, 1920); this.speed = 10; this.x = 1080; }
   update() {
     if(!isPaused) {
       clearTransform(this.transform, 1); clearTransform(this.transform, 2);
@@ -106,16 +149,19 @@ class Player extends GameObject {
   constructor(img) { super(540, 960, 200, 200); this.img = img; this.speed = -30; this.weight = 5; }
 
   update() {
-    if(isPaused) return;
-    this.speed += 1/6 * this.weight; this.transform.position.y += float2int(this.speed);
-    this.transform.size.x = float2int(10000 / abs(this.speed)); if(this.transform.size.x > 200) this.transform.size.x = 200;
-    this.transform.size.y = float2int((abs(this.speed) * 4.5)); if(this.transform.size.y < 200) this.transform.size.y = 200;
-    if(this.transform.position.y > 1920 + this.transform.size.y/2) { death(); }
+    if(!isPaused) {
+      this.speed += 1/6 * this.weight; this.transform.position.y += float2int(this.speed);
+      if(this.transform.position.y > 1920 + this.transform.size.y/2) { death(); }
+    }
   }
 
   lateUpdate() { if(!isPaused) this.render(); }
 
-  render() { renderImage(this.img, this.transform, 1); }
+  render() {
+    this.transform.size.x = float2int(10000 / abs(this.speed)); if(this.transform.size.x > 200) this.transform.size.x = 200;
+    this.transform.size.y = float2int((abs(this.speed) * 4.5)); if(this.transform.size.y < 200) this.transform.size.y = 200;
+    renderImage(this.img, this.transform, 1); 
+  }
 
   tap() { this.speed = 49; }
 
@@ -150,7 +196,7 @@ class Platform extends GameObject {
 }
 
 class ScoreText extends GameObject {
-  constructor() { super(590, 50, 980, 100); this.score = 0; renderImage(images[4], new Vector4(50, 50, 100, 100), 3); }
+  constructor() { super(590, 50, 980, 100); this.score = 0; renderImage(images[5], new Vector4(50, 50, 100, 100), 3); }
 
   update() {
     if(isPaused) return;
@@ -187,4 +233,4 @@ class Coin extends GameObject {
 // game
 
 
-const loader = new Loader(5); loader.load();
+const loader = new Loader(10); loader.load();
